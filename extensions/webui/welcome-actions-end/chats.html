@@ -26,7 +26,11 @@
             <label>Status<select :value="$store.sidebarFolders.config.status_filter" :disabled="$store.sidebarFolders.busy" @change="$store.sidebarFolders.setConfig({status_filter: $event.target.value})"><option value="all">All</option><option value="running">Working</option><option value="idle">Idle</option></select></label>
             <label>Last activity<select :value="$store.sidebarFolders.config.activity_filter" :disabled="$store.sidebarFolders.busy" @change="$store.sidebarFolders.setConfig({activity_filter: $event.target.value})"><option value="all">Any time</option><option value="1">24 hours</option><option value="3">3 days</option><option value="7">7 days</option><option value="30">30 days</option></select></label>
           </div>
-          <label class="wc-search"><x-icon name="search"></x-icon><input type="search" maxlength="200" aria-label="Search welcome chats" placeholder="Search chats and messages…" x-model="$store.welcomeChats.query" @input.debounce.300ms="$store.welcomeChats.search()" /></label>
+          <div class="wc-search">
+            <x-icon name="search"></x-icon>
+            <input type="search" x-ref="chatSearch" maxlength="200" aria-label="Search welcome chats" placeholder="Search chats and messages…" x-model="$store.welcomeChats.query" @input.debounce.300ms="$store.welcomeChats.search()" @keydown.escape.stop="$store.welcomeChats.query = ''; $store.welcomeChats.search()" />
+            <button type="button" class="welcome-panel-icon-button" x-show="$store.welcomeChats.query" aria-label="Clear chat search" @click="$store.welcomeChats.query = ''; $store.welcomeChats.search(); $refs.chatSearch.focus()"><x-icon name="close"></x-icon></button>
+          </div>
           <div class="wc-list" :aria-busy="$store.welcomeChats.searching" aria-label="Welcome chats">
             <template x-for="group in $store.welcomeChats.groups()" :key="group.pinned ? 'pinned' : group.id">
               <div class="wc-group">
@@ -59,6 +63,8 @@
     .wc-card .welcome-panel-header { margin: 0; }
     .wc-search { display: flex; align-items: center; gap: 0.5rem; border: 1px solid var(--color-border); border-radius: var(--border-radius-sm); background: var(--color-background); padding: 0.35rem 0.6rem; }
     .wc-search input { width: 100%; min-width: 0; border: 0; background: transparent; color: var(--color-text); font: inherit; font-size: 0.9rem; padding: 0.35rem 0; outline: none; }
+    .wc-search input::-webkit-search-cancel-button, .wc-search input::-webkit-search-decoration { appearance: none; display: none; }
+    .wc-search button { flex-shrink: 0; }
     .wc-search:focus-within { outline: 1px solid var(--color-text-secondary); }
     .wc-search > x-icon { font-size: 1.15rem; color: var(--color-text-muted); }
     .wc-list { height: 19rem; overflow: auto; overscroll-behavior: contain; }

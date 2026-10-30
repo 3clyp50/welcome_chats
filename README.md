@@ -16,7 +16,7 @@ Enable the plugin and reload the WebUI. Requires the current bundled **Sidebar F
 
 ## Use
 
-- Search conversation names and message text. Results include a matching excerpt; click it to open that conversation, including a matching child thread.
+- Search conversation names and message text. Results include a matching excerpt; click it to open that conversation, including a matching child thread. Clear the search with its close button or Escape.
 - Use the filter icon for Folders/Flat mode, sorting, project, working/idle status, and last activity.
 - **View and filter preferences are shared with the sidebar.** Search text applies only to this panel. Existing pinning, project grouping, child threads, and row actions are reused.
 - On the movable welcome layout, choose half/full width, drag the panel, or dismiss it. **Show all dismissed** restores it. Width and ordering persist in this browser.

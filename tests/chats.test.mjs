@@ -38,3 +38,14 @@ test('stale and unmounted search results never replace current results',async()=
   pending[2]({matches:[{id:'parent',snippet:'late'}]});await third;
   assert.equal(store.matches.length,0);
 });
+
+test('clearing search restores all rows and ignores an in-flight response',async()=>{
+  const {store,pending}=setup();
+  store.query='needle';const request=store.search();
+  store.query='';await store.search();
+  assert.equal(store.searching,false);
+  assert.equal(store.groups()[0].rows.length,2);
+  pending[0]({matches:[{id:'child',snippet:'A stale match'}]});await request;
+  assert.equal(store.matches.length,0);
+  assert.equal(store.match({id:'parent'}),null);
+});
