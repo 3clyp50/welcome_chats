@@ -1,0 +1,84 @@
+<html>
+<head><script type="module" src="/plugins/welcome_chats/webui/chats-store.js"></script></head>
+<body>
+  <div x-data>
+    <template x-if="$store.welcomeChats && $store.sidebarFolders">
+      <template x-teleport=".welcome-board, .welcome-lower-grid">
+        <section class="wc-card" data-welcome-block="welcome_chats.list" data-welcome-label="Chats"
+          :data-welcome-size="$store.welcomeChats.wide ? 'full' : 'half'"
+          x-show="!$store.welcomeChats.hidden" x-create="$store.welcomeChats.mount()" x-destroy="$store.welcomeChats.cleanup()"
+          x-data="{ options: false }" @keydown.escape.stop="options = false" @click.outside="options = false">
+          <header class="welcome-panel-header">
+            <h2>Chats</h2>
+            <div class="welcome-panel-actions">
+              <button type="button" class="welcome-panel-icon-button" aria-label="New chat from welcome" @click="$store.chats.newChat()"><x-icon name="chat_add_on"></x-icon></button>
+              <button type="button" class="welcome-panel-icon-button" aria-label="Welcome chat filters" :aria-expanded="options" @click="options = !options"><x-icon name="tune"></x-icon></button>
+              <button type="button" class="welcome-panel-icon-button" x-show="$store.welcomeStore.mountLayout" :aria-label="$store.welcomeChats.wide ? 'Use half-width chats panel' : 'Expand chats panel'" @click="$store.welcomeChats.toggleWidth()"><x-icon :name="$store.welcomeChats.wide ? 'close_fullscreen' : 'open_in_full'"></x-icon></button>
+              <button type="button" data-welcome-handle></button>
+              <button type="button" class="welcome-panel-icon-button" x-show="$store.welcomeChats.canDismiss" aria-label="Dismiss Chats" @click="$store.welcomeChats.dismiss()"><x-icon name="close"></x-icon></button>
+            </div>
+          </header>
+          <div class="wc-options" x-show="options" style="display: none;" role="group" aria-label="Chat view and filters">
+            <p>Shared with the sidebar</p>
+            <label>View<select :value="$store.sidebarFolders.config.folder_view ? 'folders' : 'flat'" :disabled="$store.sidebarFolders.busy" @change="$store.sidebarFolders.setConfig({folder_view: $event.target.value === 'folders'})"><option value="folders">Folders</option><option value="flat">Flat mode</option></select></label>
+            <label>Sort by<select :value="$store.sidebarFolders.config.sort_by" :disabled="$store.sidebarFolders.busy" @change="$store.sidebarFolders.setConfig({sort_by: $event.target.value})"><option value="recent">Last active</option><option value="created">Created time</option><option value="name">Name</option><option value="manual">Manual order</option></select></label>
+            <label>Project<select :value="$store.sidebarFolders.config.project_filter" :disabled="$store.sidebarFolders.busy" @change="$store.sidebarFolders.setConfig({project_filter: $event.target.value})"><option value="*">All projects</option><option value="">No project</option><template x-for="project in $store.projects.projectList" :key="project.name"><option :value="project.name" :selected="project.name === $store.sidebarFolders.config.project_filter" x-text="project.title || project.name"></option></template></select></label>
+            <label>Status<select :value="$store.sidebarFolders.config.status_filter" :disabled="$store.sidebarFolders.busy" @change="$store.sidebarFolders.setConfig({status_filter: $event.target.value})"><option value="all">All</option><option value="running">Working</option><option value="idle">Idle</option></select></label>
+            <label>Last activity<select :value="$store.sidebarFolders.config.activity_filter" :disabled="$store.sidebarFolders.busy" @change="$store.sidebarFolders.setConfig({activity_filter: $event.target.value})"><option value="all">Any time</option><option value="1">24 hours</option><option value="3">3 days</option><option value="7">7 days</option><option value="30">30 days</option></select></label>
+          </div>
+          <label class="wc-search"><x-icon name="search"></x-icon><input type="search" maxlength="200" aria-label="Search welcome chats" placeholder="Search chats and messages…" x-model="$store.welcomeChats.query" @input.debounce.300ms="$store.welcomeChats.search()" /></label>
+          <div class="wc-list" :aria-busy="$store.welcomeChats.searching" aria-label="Welcome chats">
+            <template x-for="group in $store.welcomeChats.groups()" :key="group.pinned ? 'pinned' : group.id">
+              <div class="wc-group">
+                <button type="button" class="wc-folder" x-show="$store.sidebarFolders.config.folder_view && !group.pinned" :aria-expanded="$store.welcomeChats.query.trim() || $store.sidebarFolders.isOpen('chat', group.id)" @click="$store.sidebarFolders.toggleFolder('chat', group.id)">
+                  <x-icon :name="$store.sidebarFolders.isOpen('chat', group.id) ? 'folder_open' : 'folder'"></x-icon><span x-text="group.title"></span>
+                </button>
+                <template x-if="!$store.sidebarFolders.config.folder_view || group.pinned || $store.welcomeChats.query.trim() || $store.sidebarFolders.isOpen('chat', group.id)">
+                  <ul class="config-list chats-config-list wc-rows">
+                    <template x-for="item in group.rows" :key="item.id">
+                      <li class="chat-tree-item" x-data="{ get context() { return item; } }" tabindex="0" @keydown.enter="if ($event.target === $el) $store.chats.selectChat(item.id)">
+                        <x-component path="sidebar/chats/chat-tree.html"></x-component>
+                        <template x-if="$store.welcomeChats.match(item)"><button type="button" class="wc-match" @click="$store.chats.selectChat($store.welcomeChats.match(item).id)" x-text="$store.welcomeChats.match(item).snippet"></button></template>
+                      </li>
+                    </template>
+                  </ul>
+                </template>
+              </div>
+            </template>
+            <p class="wc-empty" x-show="!$store.welcomeChats.groups().length" x-text="$store.welcomeChats.searching ? 'Searching…' : ($store.welcomeChats.query.trim() ? 'No matching chats.' : 'No chats match these filters.')"></p>
+          </div>
+          <footer class="wc-footer" role="status" x-text="$store.welcomeChats.searching ? 'Searching messages…' : `${$store.welcomeChats.groups().reduce((count, group) => count + group.rows.length, 0)} conversations`"></footer>
+        </section>
+      </template>
+    </template>
+  </div>
+  <style>
+    .welcome-lower-grid .wc-card { grid-column: 1 / -1; }
+    .welcome-lower-grid .wc-card [data-welcome-handle] { display: none; }
+    .wc-card { position: relative; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-panel); padding: 1.35rem; display: flex; flex-direction: column; gap: 0.85rem; min-width: 0; }
+    .wc-card .welcome-panel-header { margin: 0; }
+    .wc-search { display: flex; align-items: center; gap: 0.5rem; border: 1px solid var(--color-border); border-radius: var(--border-radius-sm); background: var(--color-background); padding: 0.35rem 0.6rem; }
+    .wc-search input { width: 100%; min-width: 0; border: 0; background: transparent; color: var(--color-text); font: inherit; font-size: 0.9rem; padding: 0.35rem 0; outline: none; }
+    .wc-search:focus-within { outline: 1px solid var(--color-text-secondary); }
+    .wc-search > x-icon { font-size: 1.15rem; color: var(--color-text-muted); }
+    .wc-list { height: 19rem; overflow: auto; overscroll-behavior: contain; }
+    .wc-card .wc-rows { overflow: visible; margin: 0; padding: 0; }
+    .wc-folder { display: flex; align-items: center; gap: 0.5rem; width: 100%; padding: 0.55rem 0.2rem; background: transparent; border: 0; color: var(--color-text); font: inherit; font-size: 0.85rem; text-align: left; cursor: pointer; }
+    .wc-folder > x-icon { font-size: 1.1rem; color: var(--color-text-muted); }
+    .wc-folder:hover { background: var(--color-background-hover); }
+    .wc-card .chat-container { min-height: 2.4rem; }
+    .wc-card .chat-list-button { font-size: 0.9rem; }
+    .wc-card .chat-list-action-btn { flex-shrink: 0; }
+    .wc-match { display: block; width: 100%; border: 0; background: transparent; color: var(--color-text-muted); font: inherit; font-size: 0.78rem; text-align: left; padding: 0.2rem 0.6rem 0.65rem; cursor: pointer; }
+    .wc-match:hover { color: var(--color-text); }
+    .wc-empty { padding: 2rem 0; text-align: center; color: var(--color-text-muted); font-size: 0.85rem; }
+    .wc-footer { border-top: 1px solid var(--color-border); padding-top: 0.7rem; font-size: 0.8rem; color: var(--color-text-muted); }
+    .wc-options { position: absolute; right: 1rem; top: 4rem; z-index: 20; width: min(280px, calc(100% - 2rem)); padding: 0.85rem; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-panel); box-shadow: 0 8px 24px #0003; display: grid; gap: 0.5rem; box-sizing: border-box; }
+    .wc-options p { margin: 0 0 0.25rem; font-size: 0.75rem; color: var(--color-text-muted); }
+    .wc-options label { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; font-size: 0.8rem; }
+    .wc-options select { width: 8rem; min-width: 0; padding: 0.35rem; border: 1px solid var(--color-border); border-radius: var(--border-radius-sm); background: var(--color-panel); color: var(--color-text); font: inherit; }
+    @media (pointer: coarse) { .wc-card .welcome-panel-icon-button { min-width: 36px; min-height: 44px; } .wc-search input { font-size: 16px; } }
+    @media (max-width: 480px) { .wc-card { padding: 1rem; } }
+  </style>
+</body>
+</html>

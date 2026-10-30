@@ -1,0 +1,40 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import vm from 'node:vm';
+import test from 'node:test';
+
+function setup() {
+  const pending=[];
+  const rows=[{id:'parent'},{id:'other'}];
+  const source=readFileSync(new URL('../webui/chats-store.js',import.meta.url),'utf8')
+    .replace(/^import .*;\n/gm,'').replace('export const store','const store');
+  const store=vm.runInNewContext(`${source}\nstore`,{
+    createStore:(_,value)=>value,callJsonApi:()=>new Promise(resolve=>pending.push(resolve)),
+    toastFrontendError:()=>assert.fail('Unexpected error'),
+    chats:{topLevelContexts:()=>rows},
+    folders:{config:{folder_view:true},childIndex:()=>null,sections:()=>[{id:'group',rows}],sortRows:(_,rows)=>rows,
+      family:row=>row.id==='parent'?[row,{id:'child'}]:[row]},
+  });
+  return {store,pending};
+}
+
+test('content matches include the parent family and open the actual matching child',async()=>{
+  const {store,pending}=setup();
+  store.query='needle';const request=store.search();
+  pending[0]({matches:[{id:'child',snippet:'A matching message'}]});await request;
+  assert.equal(store.groups()[0].rows.length,1);
+  assert.equal(store.groups()[0].rows[0].id,'parent');
+  assert.equal(store.match({id:'parent'}).id,'child');
+});
+
+test('stale and unmounted search results never replace current results',async()=>{
+  const {store,pending}=setup();
+  store.query='old';const first=store.search();
+  store.query='new';const second=store.search();
+  pending[1]({matches:[{id:'other',snippet:'new'}]});await second;
+  pending[0]({matches:[{id:'parent',snippet:'old'}]});await first;
+  assert.equal(store.matches[0].id,'other');
+  store.query='late';const third=store.search();store.cleanup();
+  pending[2]({matches:[{id:'parent',snippet:'late'}]});await third;
+  assert.equal(store.matches.length,0);
+});
