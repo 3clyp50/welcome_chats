@@ -13,7 +13,7 @@
             <div class="welcome-panel-actions">
               <button type="button" class="welcome-panel-icon-button" aria-label="New chat from welcome" @click="$store.chats.newChat()"><x-icon name="chat_add_on"></x-icon></button>
               <button type="button" class="welcome-panel-icon-button" aria-label="Welcome chat filters" :aria-expanded="options" @click="options = !options"><x-icon name="tune"></x-icon></button>
-              <button type="button" class="welcome-panel-icon-button" x-show="$store.welcomeStore.mountLayout" :aria-label="$store.welcomeChats.wide ? 'Use half-width chats panel' : 'Expand chats panel'" @click="$store.welcomeChats.toggleWidth()"><x-icon :name="$store.welcomeChats.wide ? 'close_fullscreen' : 'open_in_full'"></x-icon></button>
+              <button type="button" class="welcome-panel-icon-button" x-show="typeof $store.welcomeStore.mountLayout === 'function'" :aria-label="$store.welcomeChats.wide ? 'Use half-width chats panel' : 'Expand chats panel'" @click="$store.welcomeChats.toggleWidth()"><x-icon :name="$store.welcomeChats.wide ? 'close_fullscreen' : 'open_in_full'"></x-icon></button>
               <button type="button" data-welcome-handle></button>
               <button type="button" class="welcome-panel-icon-button" x-show="$store.welcomeChats.canDismiss" aria-label="Dismiss Chats" @click="$store.welcomeChats.dismiss()"><x-icon name="close"></x-icon></button>
             </div>
