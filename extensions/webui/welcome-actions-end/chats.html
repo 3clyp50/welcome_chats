@@ -7,7 +7,7 @@
         <section class="wc-card" data-welcome-block="welcome_chats.list" data-welcome-label="Chats"
           :data-welcome-size="$store.welcomeChats.wide ? 'full' : 'half'"
           x-show="!$store.welcomeChats.hidden" x-create="$store.welcomeChats.mount()" x-destroy="$store.welcomeChats.cleanup()"
-          x-data="{ options: false }" @keydown.escape.stop="options = false" @click.outside="options = false">
+          x-data="{ options: false }" @keydown.escape.stop="options = false; $store.sidebarFolders.dismissMenus()" @click.outside="options = false">
           <header class="welcome-panel-header">
             <h2>Chats</h2>
             <div class="welcome-panel-actions">
@@ -31,12 +31,21 @@
             <input type="search" x-ref="chatSearch" maxlength="200" aria-label="Search welcome chats" placeholder="Search chats and messages…" x-model="$store.welcomeChats.query" @input.debounce.300ms="$store.welcomeChats.search()" @keydown.escape.stop="$store.welcomeChats.query = ''; $store.welcomeChats.search()" />
             <button type="button" class="welcome-panel-icon-button" x-show="$store.welcomeChats.query" aria-label="Clear chat search" @click="$store.welcomeChats.query = ''; $store.welcomeChats.search(); $refs.chatSearch.focus()"><x-icon name="close"></x-icon></button>
           </div>
-          <div class="wc-list" :aria-busy="$store.welcomeChats.searching" aria-label="Welcome chats">
+          <div class="wc-list" :aria-busy="$store.welcomeChats.searching" aria-label="Welcome chats"
+            @pointerover="$store.welcomeChats.keepRowMenu($event)" @pointerout="$store.welcomeChats.keepRowMenu($event)"
+            @focusin="$store.welcomeChats.keepRowMenu($event)" @scroll="$store.sidebarFolders.dismissMenus()">
             <template x-for="group in $store.welcomeChats.groups()" :key="group.pinned ? 'pinned' : group.id">
               <div class="wc-group">
-                <button type="button" class="wc-folder" x-show="$store.sidebarFolders.config.folder_view && !group.pinned" :aria-expanded="$store.welcomeChats.query.trim() || $store.sidebarFolders.isOpen('chat', group.id)" @click="$store.sidebarFolders.toggleFolder('chat', group.id)">
-                  <x-icon :name="$store.sidebarFolders.isOpen('chat', group.id) ? 'folder_open' : 'folder'"></x-icon><span x-text="group.title"></span>
-                </button>
+                <div class="wc-folder-row sidebar-folder-row" x-show="$store.sidebarFolders.config.folder_view && !group.pinned">
+                  <button type="button" class="wc-folder" :aria-expanded="!!$store.welcomeChats.query.trim() || $store.sidebarFolders.isOpen('chat', group.id)" @click="$store.sidebarFolders.toggleFolder('chat', group.id)">
+                    <x-icon :name="$store.sidebarFolders.isOpen('chat', group.id) ? 'folder_open' : 'folder'"></x-icon><span x-text="group.title"></span>
+                  </button>
+                  <button type="button" class="btn-icon-action chat-list-action-btn wc-folder-action" :aria-label="'New chat in ' + group.title"
+                    @click.stop="$store.sidebarFolders.newChat(group.id)"><x-icon name="chat_add_on"></x-icon></button>
+                  <button type="button" class="btn-icon-action chat-list-action-btn wc-folder-action" :aria-label="'Actions for ' + group.title" aria-haspopup="menu"
+                    :aria-expanded="$store.sidebarFolders.menu === 'project' && $store.sidebarFolders.menuProject === group.id"
+                    @click.stop="$store.sidebarFolders.openMenu('project', $event.currentTarget, group.id)"><x-icon name="more_vert"></x-icon></button>
+                </div>
                 <template x-if="!$store.sidebarFolders.config.folder_view || group.pinned || $store.welcomeChats.query.trim() || $store.sidebarFolders.isOpen('chat', group.id)">
                   <ul class="config-list chats-config-list wc-rows">
                     <template x-for="item in group.rows" :key="item.id">
@@ -69,9 +78,17 @@
     .wc-search > x-icon { font-size: 1.15rem; color: var(--color-text-muted); }
     .wc-list { height: 19rem; overflow: auto; overscroll-behavior: contain; }
     .wc-card .wc-rows { overflow: visible; margin: 0; padding: 0; }
-    .wc-folder { display: flex; align-items: center; gap: 0.5rem; width: 100%; padding: 0.55rem 0.2rem; background: transparent; border: 0; color: var(--color-text); font: inherit; font-size: 0.85rem; text-align: left; cursor: pointer; }
+    .wc-folder-row { display: flex; align-items: center; min-width: 0; }
+    .wc-folder { display: flex; flex: 1; min-width: 0; align-items: center; gap: 0.5rem; padding: 0.55rem 0.2rem; background: transparent; border: 0; color: var(--color-text); font: inherit; font-size: 0.85rem; text-align: left; cursor: pointer; }
+    .wc-folder > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .wc-folder > x-icon { font-size: 1.1rem; color: var(--color-text-muted); }
     .wc-folder:hover { background: var(--color-background-hover); }
+    .wc-folder-action { display: none; }
+    .wc-folder-row:is(:hover, :focus-within) .wc-folder-action,
+    .wc-folder-row:has([aria-haspopup="menu"][aria-expanded="true"]) .wc-folder-action,
+    .device-touch .wc-folder-row .wc-folder-action,
+    .wc-card .chat-tree-item:focus-within .chat-list-action-btn,
+    .wc-card .chat-container:has([aria-haspopup="menu"][aria-expanded="true"]) .chat-list-action-btn { display: inline-flex; }
     .wc-card .chat-container { min-height: 2.4rem; }
     .wc-card .chat-list-button { font-size: 0.9rem; }
     .wc-card .chat-list-action-btn { flex-shrink: 0; }
@@ -83,7 +100,7 @@
     .wc-options p { margin: 0 0 0.25rem; font-size: 0.75rem; color: var(--color-text-muted); }
     .wc-options label { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; font-size: 0.8rem; }
     .wc-options select { width: 8rem; min-width: 0; padding: 0.35rem; border: 1px solid var(--color-border); border-radius: var(--border-radius-sm); background: var(--color-panel); color: var(--color-text); font: inherit; }
-    @media (pointer: coarse) { .wc-card .welcome-panel-icon-button { min-width: 36px; min-height: 44px; } .wc-search input { font-size: 16px; } }
+    @media (pointer: coarse) { .wc-card .welcome-panel-icon-button, .wc-card .chat-list-action-btn { min-width: 36px; min-height: 44px; } .wc-folder-row .wc-folder-action { display: inline-flex; } .wc-search input { font-size: 16px; } }
     @media (max-width: 480px) { .wc-card { padding: 1rem; } }
   </style>
 </body>

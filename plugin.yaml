@@ -1,7 +1,7 @@
 name: welcome_chats
 title: Welcome Chats
 description: Find conversations and search messages from the welcome screen, with sidebar folders and filters.
-version: 1.0.2
+version: 1.0.3
 settings_sections: []
 per_project_config: false
 per_agent_config: false

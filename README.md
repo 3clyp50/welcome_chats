@@ -19,6 +19,7 @@ Enable the plugin and reload the WebUI. Requires the current bundled **Sidebar F
 - Search conversation names and message text. Results include a matching excerpt; click it to open that conversation, including a matching child thread. Clear the search with its close button or Escape.
 - Use the filter icon for Folders/Flat mode, sorting, project, working/idle status, and last activity.
 - **View and filter preferences are shared with the sidebar.** Search text applies only to this panel. Existing pinning, project grouping, child threads, and row actions are reused.
+- Folder headers offer **New chat** and **Actions** for the corresponding project, including No project. Actions appear on hover or keyboard focus and stay available on touch screens. Chat action menus stay open while moving within their row or menu; Escape, clicking elsewhere, or scrolling the list closes them.
 - On the movable welcome layout, choose half/full width, drag the panel, or dismiss it. **Show all dismissed** restores it. Width and ordering persist in this browser.
 
 Search is case-insensitive literal text over live conversations available to the sidebar, including their loaded message logs. It does not search deleted/archived chats or perform semantic search. Results stay inside the authenticated Agent Zero UI and are rendered as plain text.
@@ -30,6 +31,8 @@ Disable or uninstall through Plugins. Conversations, project assignments, pins, 
 ## Develop
 
 The panel contributes the block `welcome_chats.list` through `welcome-actions-end`. It reuses core chat rows and Sidebar Folders filtering/grouping without registering another sidebar view. Its API keeps normal authentication/CSRF checks and validates query text before searching.
+
+Folder controls call the existing Sidebar Folders actions. Pointer and focus events within an expanded welcome chat row cancel the sidebar-only hover dismissal; events outside that row continue through the shared menu handlers.
 
 Run `python -m unittest discover -s tests` and `node --test tests/*.test.mjs`. Smoke-test title/message search, filters, nested threads, row actions, hide/restore, half/full widths, and narrow touch layouts.
 

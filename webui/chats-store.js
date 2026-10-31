@@ -25,6 +25,14 @@ export const store = createStore("welcomeChats", {
     this.wide = !this.wide;
     try { localStorage.setItem("welcomeChats.wide", String(this.wide)); } catch (error) { console.warn(error); }
   },
+  keepRowMenu(event) {
+    const target = event.type === "pointerout" ? event.relatedTarget : event.target;
+    const row = target?.closest?.(".chat-container");
+    if (!row || !event.currentTarget.contains(row) || !row.querySelector('button[aria-haspopup="menu"][aria-expanded="true"]')) return;
+    // Core's hover/focus cleanup only resolves chat owners inside the sidebar.
+    folders.cancelMenuExit();
+    event.stopPropagation();
+  },
   async search() {
     const request = ++this.request;
     const query = this.query.trim();
